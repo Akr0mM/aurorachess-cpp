@@ -1,24 +1,29 @@
 #include <iostream>
+#include <chrono>
 
 #include "Aurora.h"
 #include "Board.h"
 
-using namespace std;
-
 int main()
 {
-    string fen = "rnbqkbnr/ppppp2p/6p1/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3";
+    string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     Board board(fen);
     Aurora aurora(fen);
-    
+
+    auto start = chrono::steady_clock::now();
+
     list<Move> moves = aurora.GetMoves();
+
+    auto end = chrono::steady_clock::now();
+
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end - start).count();
 
     for (const auto& move : moves) {
         Board::DrawMask(move.mask);
     }
 
-    cout << "Total moves : " << moves.size() << endl;
-
+    cout << "Total moves : " << moves.size() << " in " << duration << "ms" << endl;
+    
     return 0;
 }

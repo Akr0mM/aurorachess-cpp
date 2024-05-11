@@ -4,6 +4,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <list>
+#include <bitset>
 #include <cmath>
 
 #include "Board.h"
@@ -12,11 +13,16 @@ using namespace std;
 
 // Move Structure
 struct Move {
+	unsigned long long* piece;
 	unsigned long long mask;
+
 	unsigned long long capture;
+
 	unsigned long long promotion;
 	unsigned long long* promotionPiece;
+
 	unsigned long long enPassantCapture;
+	unsigned long long* enPassantPiece;
 };
 
 class Aurora
@@ -25,7 +31,7 @@ public:
 	// Constructor 
 	Aurora(string fen);
 	void Load(string fen);
-	void PlayMove(Move move);
+	void MakeMove(Move move);
 	unsigned long long GetMoveMask(const string& move);
 	unsigned long long GetSquareMask(const string& square);
 
@@ -35,9 +41,13 @@ public:
 	list<Move> GetMovesWP(unsigned long long blackPieces, unsigned long long empty);
 	list<Move> GetBlackMoves(unsigned long long notBlackPieces, unsigned long long whitePieces, unsigned long long empty);
 	list<Move> GetMovesBP(unsigned long long whitePieces, unsigned long long empty);
+	list<Move> GetKnightMoves(unsigned long long bb, unsigned long long notMyPieces, unsigned long long oppPieces);
 
 	// Conversion
 	static unsigned long long BinaryToLong(const string& binary);
+	unsigned long long* GetWhitePiece(unsigned long long mask);
+	unsigned long long* GetBlackPiece(unsigned long long mask);
+	int NumberOfTrailingZeros(unsigned long long bb);
 
 	// Game States
 	string fen, castling, halfMoveClock, fullMoveNumber;
@@ -46,8 +56,9 @@ public:
 
 	// Bitboards
 	unsigned long long wp, wr, wn, wb, wq, wk, bp, br, bn, bb, bq, bk;
-	unsigned long long* GetWhitePiece(unsigned long long mask);
-	unsigned long long* GetBlackPiece(unsigned long long mask);
+	const unsigned long long GetAllWhitePieces();
+	const unsigned long long GetAllBlackPieces();
+	const unsigned long long GetAllPieces();
 
 	// Mask
 	const static unsigned long long FILE_A = 0x8080808080808080;
