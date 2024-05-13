@@ -24,6 +24,8 @@ int main()
     }
 
     cout << "Total moves : " << moves.size() << " in " << duration << "ms" << endl;
+
+    Board::DrawMask(aurora.bn);
     
     return 0;
 }

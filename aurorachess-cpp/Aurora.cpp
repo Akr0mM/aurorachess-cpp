@@ -26,63 +26,24 @@ list<Move> Aurora::GetMoves() {
 }
 
 list<Move> Aurora::GetWhiteMoves(unsigned long long notWhitePieces, unsigned long long blackPieces, unsigned long long empty) {
-	list<Move> moves = GetMovesWP(blackPieces, empty); // White pawn moves
-	list<Move> knightMoves = GetKnightMoves(wn, notWhitePieces, blackPieces);
+	list<Move> moves = GetWPMoves(blackPieces, empty);
+	list<Move> knightMoves = GetWNMoves(notWhitePieces, blackPieces);
 
 	moves.insert(moves.end(), knightMoves.begin(), knightMoves.end());
-
-	return knightMoves;
-}
-
-list<Move> Aurora::GetKnightMoves(unsigned long long bb, unsigned long long notMyPieces, unsigned long long oppPieces) {
-	list<Move> moves;
-
-	unsigned long long piece = bb & ~(bb - 1);
-	unsigned long long knightMoves;
-	while (piece) {
-		int i = NumberOfTrailingZeros(piece);
-		
-		if (i > 18) {
-			knightMoves = KNIGHT_SPAN << (i - 18) & notMyPieces;
-		}
-		else {
-			knightMoves = KNIGHT_SPAN >> (18 - i) & notMyPieces;
-		}
-
-		if (piece & FILE_AB)
-			knightMoves &= ~FILE_GH;
-		else if (piece & FILE_GH)
-			knightMoves &= ~FILE_AB;
-
-		unsigned long long move = knightMoves & ~(knightMoves - 1);
-		while (move) {
-			Move knight = { piece | move };
-
-			moves.push_back(knight);
-
-			// Loop through moves
-			knightMoves ^= move;
-			move = knightMoves & ~(knightMoves - 1);
-		}
-
-		// Loop through knight
-		bb ^= piece;
-		piece = bb & ~(bb - 1);
-	}
 
 	return moves;
 }
 
 list<Move> Aurora::GetBlackMoves(unsigned long long notBlackPieces, unsigned long long whitePieces, unsigned long long empty) {
-	// Black pawn moves
-	list<Move> moves = GetMovesBP(whitePieces, empty);
+	list<Move> moves = GetBPMoves(whitePieces, empty);
+	list<Move> knightMoves = GetBNMoves(notBlackPieces, whitePieces);
 
-	//moves.insert(moves.end(), pawnMoves.begin(), pawnMoves.end());
+	moves.insert(moves.end(), knightMoves.begin(), knightMoves.end());
 
 	return moves;
 }
 
-list<Move> Aurora::GetMovesWP(unsigned long long blackPieces, unsigned long long empty) {
+list<Move> Aurora::GetWPMoves(unsigned long long blackPieces, unsigned long long empty) {
 	list<Move> moves;
 	const int types = 4;
 	unsigned long long* promotionTypes[types] = { &wn, &wb, &wr, &wq };
@@ -121,7 +82,7 @@ list<Move> Aurora::GetMovesWP(unsigned long long blackPieces, unsigned long long
 
 	while (piece) {
 		// Add pawn move
-		moves.push_back({ &wp, piece | (piece >> 7), piece });
+		moves.push_back({ &wp, piece | (piece >> 7), piece, GetBlackPiece(piece) });
 
 
 		// Loop
@@ -136,7 +97,7 @@ list<Move> Aurora::GetMovesWP(unsigned long long blackPieces, unsigned long long
 
 	while (piece) {
 		// Add pawn move
-		moves.push_back({ &wp, piece | (piece >> 9), piece });
+		moves.push_back({ &wp, piece | (piece >> 9), piece, GetBlackPiece(piece) });
 
 		// Loop
 		captureLeftMoves ^= piece;
@@ -152,7 +113,7 @@ list<Move> Aurora::GetMovesWP(unsigned long long blackPieces, unsigned long long
 		// Loop for all promotion piece type
 		for (int type = 0; type < types; type++) {
 			// Add pawn move
-			moves.push_back({ &wp, piece | (piece >> 8), 0ULL, piece, promotionTypes[type]});
+			moves.push_back({ &wp, piece | (piece >> 8), 0ULL, 0ULL, piece, promotionTypes[type] });
 		}
 
 		// Loop
@@ -169,7 +130,7 @@ list<Move> Aurora::GetMovesWP(unsigned long long blackPieces, unsigned long long
 		// Loop for all promotion piece type
 		for (int type = 0; type < types; type++) {
 			// Add pawn move
-			moves.push_back({ &wp, piece | (piece >> 7), piece, piece, promotionTypes[type] });
+			moves.push_back({ &wp, piece | (piece >> 7), piece, GetBlackPiece(piece), piece, promotionTypes[type]});
 		}
 
 		// Loop
@@ -186,7 +147,7 @@ list<Move> Aurora::GetMovesWP(unsigned long long blackPieces, unsigned long long
 		// Loop for all promotion piece type
 		for (int type = 0; type < types; type++) {
 			// Add pawn move
-			moves.push_back({ &wp, piece | (piece >> 9), piece, piece, promotionTypes[type] });
+			moves.push_back({ &wp, piece | (piece >> 9), piece, GetBlackPiece(piece), piece, promotionTypes[type] });
 		}
 
 		// Loop
@@ -203,7 +164,7 @@ list<Move> Aurora::GetMovesWP(unsigned long long blackPieces, unsigned long long
 		// Check if can en passant
 		if ((piece << 8) == enPassant) {
 			// Add pawn move
-			moves.push_back({ &wp, (piece << 1) | enPassant, 0ULL, 0ULL, 0ULL, piece, &bp });
+			moves.push_back({ &wp, (piece << 1) | enPassant, 0ULL, 0ULL, 0ULL, 0ULL, piece, &bp });
 		}
 
 		// Loop
@@ -220,7 +181,7 @@ list<Move> Aurora::GetMovesWP(unsigned long long blackPieces, unsigned long long
 		// Check if can en passant
 		if ((piece << 8) == enPassant) {
 			// Add pawn move
-			moves.push_back({ &wp, (piece >> 1) | enPassant, 0ULL, 0ULL, 0ULL, piece, &bp });
+			moves.push_back({ &wp, (piece >> 1) | enPassant, 0ULL, 0ULL, 0ULL, 0ULL, piece, &bp });
 		}
 
 		// Loop
@@ -231,7 +192,7 @@ list<Move> Aurora::GetMovesWP(unsigned long long blackPieces, unsigned long long
 	return moves;
 }
 
-list<Move> Aurora::GetMovesBP(unsigned long long whitePieces, unsigned long long empty) {
+list<Move> Aurora::GetBPMoves(unsigned long long whitePieces, unsigned long long empty) {
 	list<Move> moves;
 	const int types = 4;
 	unsigned long long* promotionTypes[types] = { &bn, &bb, &br, &bq };
@@ -270,7 +231,7 @@ list<Move> Aurora::GetMovesBP(unsigned long long whitePieces, unsigned long long
 
 	while (piece) {
 		// Add pawn move
-		moves.push_back({ &bp, piece | (piece << 7), piece });
+		moves.push_back({ &bp, piece | (piece << 7), piece, GetWhitePiece(piece) });
 
 
 		// Loop
@@ -285,7 +246,7 @@ list<Move> Aurora::GetMovesBP(unsigned long long whitePieces, unsigned long long
 
 	while (piece) {
 		// Add pawn move
-		moves.push_back({ &bp, piece | (piece << 9), piece });
+		moves.push_back({ &bp, piece | (piece << 9), piece, GetWhitePiece(piece) });
 
 		// Loop
 		captureLeftMoves ^= piece;
@@ -301,7 +262,7 @@ list<Move> Aurora::GetMovesBP(unsigned long long whitePieces, unsigned long long
 		// Loop for all promotion piece type
 		for (int type = 0; type < types; type++) {
 			// Add pawn move
-			moves.push_back({ &bp, piece | (piece << 8), 0ULL, piece, promotionTypes[type] });
+			moves.push_back({ &bp, piece | (piece << 8), 0ULL, 0ULL, piece, promotionTypes[type] });
 		}
 
 		// Loop
@@ -318,7 +279,7 @@ list<Move> Aurora::GetMovesBP(unsigned long long whitePieces, unsigned long long
 		// Loop for all promotion piece type
 		for (int type = 0; type < types; type++) {
 			// Add pawn move
-			moves.push_back({ &bp, piece | (piece << 7), piece, piece, promotionTypes[type] });
+			moves.push_back({ &bp, piece | (piece << 7), piece, GetWhitePiece(piece),  piece, promotionTypes[type] });
 		}
 
 		// Loop
@@ -335,7 +296,7 @@ list<Move> Aurora::GetMovesBP(unsigned long long whitePieces, unsigned long long
 		// Loop for all promotion piece type
 		for (int type = 0; type < types; type++) {
 			// Add pawn move
-			moves.push_back({ &bp, piece | (piece << 9), piece, piece, promotionTypes[type] });
+			moves.push_back({ &bp, piece | (piece << 9), piece, GetWhitePiece(piece), piece, promotionTypes[type]});
 		}
 
 		// Loop
@@ -352,7 +313,7 @@ list<Move> Aurora::GetMovesBP(unsigned long long whitePieces, unsigned long long
 		// Check if can en passant
 		if ((piece >> 8) == enPassant) {
 			// Add pawn move
-			moves.push_back({ &bp, (piece >> 1) | enPassant, 0ULL, 0ULL, 0ULL, piece, &wp });
+			moves.push_back({ &bp, (piece >> 1) | enPassant, 0ULL, 0ULL, 0ULL, 0ULL, piece, &wp });
 		}
 
 		// Loop
@@ -369,7 +330,7 @@ list<Move> Aurora::GetMovesBP(unsigned long long whitePieces, unsigned long long
 		// Check if can en passant
 		if ((piece >> 8) == enPassant) {
 			// Add pawn move
-			moves.push_back({ &bp, (piece << 1) | enPassant, 0ULL, 0ULL, 0ULL, piece, &wp });
+			moves.push_back({ &bp, (piece << 1) | enPassant, 0ULL, 0ULL, 0ULL, 0ULL, piece, &wp });
 		}
 
 		// Loop
@@ -381,33 +342,123 @@ list<Move> Aurora::GetMovesBP(unsigned long long whitePieces, unsigned long long
 }
 
 
+list<Move> Aurora::GetWNMoves(unsigned long long notWhitePieces, unsigned long long blackPieces) {
+	list<Move> moves;
+
+	unsigned long long knightsBB = wn;
+	unsigned long long piece = knightsBB & ~(knightsBB - 1);
+	unsigned long long knightMoves;
+
+	while (piece) {
+		int i = log2(piece);
+
+		if (i > 18) {
+			knightMoves = KNIGHT_SPAN << (i - 18) & notWhitePieces;
+		}
+		else {
+			knightMoves = KNIGHT_SPAN >> (18 - i) & notWhitePieces;
+		}
+
+		if (piece & FILE_AB)
+			knightMoves &= ~FILE_GH;
+		else if (piece & FILE_GH)
+			knightMoves &= ~FILE_AB;
+
+		unsigned long long move = knightMoves & ~(knightMoves - 1);
+		while (move) {
+			Move knight = { &wn, piece | move };
+
+			if (move & blackPieces) {
+				knight.capture = move;
+				knight.capturedPiece = GetBlackPiece(move);
+			}
+
+			moves.push_back(knight);
+
+			// Loop through moves
+			knightMoves ^= move;
+			move = knightMoves & ~(knightMoves - 1);
+		}
+
+		// Loop through knights
+		knightsBB ^= piece;
+		piece = knightsBB & ~(knightsBB - 1);
+	}
+
+	return moves;
+}
+
+list<Move> Aurora::GetBNMoves(unsigned long long notBlackPieces, unsigned long long whitePieces) {
+	list<Move> moves;
+
+	unsigned long long knightsBB = bn;
+	unsigned long long piece = knightsBB & ~(knightsBB - 1);
+	unsigned long long knightMoves;
+
+	while (piece) {
+		int i = log2(piece);
+
+		if (i > 18) {
+			knightMoves = KNIGHT_SPAN << (i - 18) & notBlackPieces;
+		}
+		else {
+			knightMoves = KNIGHT_SPAN >> (18 - i) & notBlackPieces;
+		}
+
+		if (piece & FILE_AB)
+			knightMoves &= ~FILE_GH;
+		else if (piece & FILE_GH)
+			knightMoves &= ~FILE_AB;
+
+		unsigned long long move = knightMoves & ~(knightMoves - 1);
+		while (move) {
+			Move knight = { &bn, piece | move };
+
+			if (move & whitePieces) {
+				knight.capture = move;
+				knight.capturedPiece = GetWhitePiece(move);
+			}
+
+			moves.push_back(knight);
+
+			// Loop through moves
+			knightMoves ^= move;
+			move = knightMoves & ~(knightMoves - 1);
+		}
+
+		// Loop through knights
+		knightsBB ^= piece;
+		piece = knightsBB & ~(knightsBB - 1);
+	}
+
+	return moves;
+}
+
 void Aurora::MakeMove(Move move) {
 	*move.piece ^= move.mask;
 	
 	// En passant
-	if (move.enPassantCapture) {
+	if (move.enPassantPawnCaptured) {
 		// Remove pawn
-		*move.enPassantPiece ^= move.enPassantCapture;
-	
-		enPassant = 0ULL;
+		*move.enPassantPieceCaptured ^= move.enPassantPawnCaptured;
 	}
 	
 	// Promotion
 	if (move.promotion) {
 		// Remove pawn that promotes
-		wp ^= move.promotion;
+		*move.piece ^= move.promotion;
 	
-		// Remove old pawn that promote
+		// Add created piece
 		*move.promotionPiece |= move.promotion;
 	}
 	
-	// White capture a black piece
+	// Capture
 	if (move.capture) {
 		// Remove captured piece
-		unsigned long long* piece = GetBlackPiece(move.capture);
-		*piece ^= move.capture;
+		*move.capturedPiece ^= move.capture;
 	}
 	
+	enPassant = 0ULL;
 	turn = !turn;
 }
 
@@ -515,14 +566,6 @@ void Aurora::Load(string fen) {
 	bk = BinaryToLong(bitboards["bk"]);
 }
 
-int Aurora::NumberOfTrailingZeros(unsigned long long bb) {
-	bitset<64> bits(bb);
-	string binaryString = bits.to_string();
-
-	size_t pos = binaryString.find('1');
-	return size(binaryString.substr(pos)) - 1;
-}
-
 unsigned long long Aurora::BinaryToLong(const string& binary) {
 	long long result = 0;
 	for (char bit : binary) {
@@ -532,6 +575,15 @@ unsigned long long Aurora::BinaryToLong(const string& binary) {
 		}
 	}
 	return result;
+}
+
+string Aurora::GetChessNotation(unsigned long long mask) {
+	int bitPosition = log2(mask);
+
+	int row = 1 + (bitPosition / 8);
+	int col = 'h' - (bitPosition % 8);
+
+	return static_cast<char>(col) + to_string(row);
 }
 
 const unsigned long long Aurora::GetAllWhitePieces() {

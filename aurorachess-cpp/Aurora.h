@@ -17,12 +17,13 @@ struct Move {
 	unsigned long long mask;
 
 	unsigned long long capture;
+	unsigned long long* capturedPiece;
 
 	unsigned long long promotion;
 	unsigned long long* promotionPiece;
 
-	unsigned long long enPassantCapture;
-	unsigned long long* enPassantPiece;
+	unsigned long long enPassantPawnCaptured;
+	unsigned long long* enPassantPieceCaptured;
 };
 
 class Aurora
@@ -35,19 +36,22 @@ public:
 	unsigned long long GetMoveMask(const string& move);
 	unsigned long long GetSquareMask(const string& square);
 
-	// GetMoves
+	// GetMoves White
 	list<Move> GetMoves();
 	list<Move> GetWhiteMoves(unsigned long long notWhitePieces, unsigned long long blackPieces, unsigned long long empty);
-	list<Move> GetMovesWP(unsigned long long blackPieces, unsigned long long empty);
+	list<Move> GetWPMoves(unsigned long long blackPieces, unsigned long long empty);
+	list<Move> GetWNMoves(unsigned long long notWhitePieces, unsigned long long blackPieces);
+
+	// GetMoves Black
 	list<Move> GetBlackMoves(unsigned long long notBlackPieces, unsigned long long whitePieces, unsigned long long empty);
-	list<Move> GetMovesBP(unsigned long long whitePieces, unsigned long long empty);
-	list<Move> GetKnightMoves(unsigned long long bb, unsigned long long notMyPieces, unsigned long long oppPieces);
+	list<Move> GetBPMoves(unsigned long long whitePieces, unsigned long long empty);
+	list<Move> GetBNMoves(unsigned long long notBlackPieces, unsigned long long whitePieces);
 
 	// Conversion
 	static unsigned long long BinaryToLong(const string& binary);
+	string GetChessNotation(unsigned long long mask);
 	unsigned long long* GetWhitePiece(unsigned long long mask);
 	unsigned long long* GetBlackPiece(unsigned long long mask);
-	int NumberOfTrailingZeros(unsigned long long bb);
 
 	// Game States
 	string fen, castling, halfMoveClock, fullMoveNumber;
